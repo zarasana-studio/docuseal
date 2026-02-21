@@ -1,0 +1,225 @@
+// This is your Prisma schema file
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─── Auth ──────────────────────────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?   // null for OAuth users
+  role          Role      @default(USER)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts     Account[]
+  sessions     Session[]
+  verificationTokens VerificationToken[]
+  passwordResetTokens PasswordResetToken[]
+
+  subscription Subscription?
+  documents    Document[]
+  usage        UsageRecord[]
+
+  @@index([email])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  id      String   @id @default(cuid())
+  userId  String
+  token   String   @unique
+  expires DateTime
+  used    Boolean  @default(false)
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId])
+}
+
+model PasswordResetToken {
+  id      String   @id @default(cuid())
+  userId  String
+  token   String   @unique
+  expires DateTime
+  used    Boolean  @default(false)
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId])
+}
+
+// ─── Subscriptions & Billing ──────────────────────────────────────────────
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum Plan {
+  FREE
+  STARTER
+  PRO
+  BUSINESS
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  INCOMPLETE
+  INCOMPLETE_EXPIRED
+  UNPAID
+  PAUSED
+}
+
+model Subscription {
+  id                   String             @id @default(cuid())
+  userId               String             @unique
+  plan                 Plan               @default(FREE)
+  status               SubscriptionStatus @default(ACTIVE)
+
+  stripeCustomerId     String?            @unique
+  stripeSubscriptionId String?            @unique
+  stripePriceId        String?
+  stripeCurrentPeriodEnd DateTime?
+  stripeCancelAtPeriodEnd Boolean         @default(false)
+
+  trialEndsAt          DateTime?
+  canceledAt           DateTime?
+
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payments Payment[]
+
+  @@index([stripeCustomerId])
+  @@index([stripeSubscriptionId])
+}
+
+model Payment {
+  id                    String   @id @default(cuid())
+  subscriptionId        String
+  stripePaymentIntentId String?
+  stripeInvoiceId       String?  @unique
+  amount                Int      // in cents
+  currency              String   @default("usd")
+  status                String   // paid, failed, pending
+  failureReason         String?
+  paidAt                DateTime?
+  createdAt             DateTime @default(now())
+
+  subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@index([subscriptionId])
+  @@index([stripeInvoiceId])
+}
+
+// ─── Documents ──────────────────────────────────────────────────────────────
+
+enum DocumentType {
+  PRIVACY_POLICY
+  TERMS_OF_SERVICE
+  NDA
+  CLIENT_CONTRACT
+  FREELANCER_AGREEMENT
+  COOKIE_POLICY
+  EMPLOYMENT_CONTRACT
+  REFUND_POLICY
+}
+
+enum DocumentStatus {
+  DRAFT
+  FINAL
+}
+
+model Document {
+  id          String         @id @default(cuid())
+  userId      String
+  type        DocumentType
+  status      DocumentStatus @default(DRAFT)
+  title       String
+  content     String         @db.Text
+  answers     Json           // form inputs used to generate
+  wordCount   Int            @default(0)
+  isWatermarked Boolean      @default(true)
+  shareToken  String?        @unique @default(cuid())
+  shareEnabled Boolean       @default(false)
+
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([type])
+  @@index([shareToken])
+}
+
+// ─── Usage Tracking ──────────────────────────────────────────────────────────
+
+model UsageRecord {
+  id        String   @id @default(cuid())
+  userId    String
+  action    String   // "generate_document", "download_pdf", "ai_call"
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+// ─── Waitlist / Email Capture ─────────────────────────────────────────────
+
+model WaitlistEntry {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  source    String?  // which tool page they came from
+  createdAt DateTime @default(now())
+
+  @@index([email])
+}
