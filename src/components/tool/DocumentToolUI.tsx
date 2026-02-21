@@ -13,10 +13,9 @@ import {
   ArrowRight,
   ArrowLeft,
 } from "lucide-react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
+import { TipTapEditor } from "../TipTapEditor";
 
 interface ToolField {
   key: string;
@@ -180,9 +179,11 @@ export function DocumentToolUI({
           <div id="document-content-wrapper" className="relative p-8 bg-white text-slate-900">
             <h1 className="text-3xl font-bold mb-6 border-b pb-4">{title}</h1>
             <div className="prose prose-sm md:prose-base max-w-none text-slate-800 prose-headings:text-slate-900 prose-a:text-blue-600 prose-strong:text-slate-900">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                {content}
-              </ReactMarkdown>
+              <TipTapEditor
+                content={content}
+                onChange={(newContent) => setContent(newContent)}
+                editable={true}
+              />
             </div>
             
             {/* Watermark for free plan */}

@@ -10,15 +10,13 @@ import {
   Copy,
   Check,
   Edit3,
-  Eye,
   Trash2,
   Loader2,
 } from "lucide-react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { DOCUMENT_TYPE_LABELS, formatDate } from "@/lib/utils";
+import { TipTapEditor } from "./TipTapEditor";
 
 interface DocumentEditorProps {
   id: string;
@@ -232,48 +230,34 @@ export function DocumentEditor({
 
       {/* Editor / Viewer Surface */}
       <div className="relative bg-white dark:bg-slate-50 border border-border rounded-xl shadow-sm min-h-[500px]">
-        {/* View Mode Toggle Overlay (if editing) */}
-        {isEditing && (
-          <div className="absolute top-4 right-4 z-10 flex gap-2">
-            <button
-              onClick={() => setIsEditing(false)}
-              className="flex items-center gap-1.5 text-xs font-semibold bg-primary text-white px-3 py-1.5 rounded-full shadow-md hover:bg-primary/90 transition-colors"
-            >
-              <Eye className="w-3.5 h-3.5" /> Preview Markdown
-            </button>
-          </div>
-        )}
-
-        {isEditing ? (
-          <textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            className="w-full h-full min-h-[600px] p-8 bg-slate-900 text-slate-100 font-mono text-sm leading-relaxed rounded-xl focus:outline-none focus:ring-0 resize-y"
-            placeholder="Document content missing..."
-            spellCheck={false}
-          />
-        ) : (
-          <div className="overflow-auto max-h-[70vh]">
-            <div
-              id="document-content-wrapper"
-              className="relative p-10 bg-white text-slate-900 mx-auto max-w-4xl"
-            >
-              <h1 className="text-3xl font-bold mb-8 border-b pb-4">{title}</h1>
-              <div className="prose prose-sm md:prose-base max-w-none text-slate-800 prose-headings:text-slate-900 prose-a:text-blue-600 prose-strong:text-slate-900">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                  {content}
-                </ReactMarkdown>
-              </div>
-
-              {/* Watermark for free plan, only visible in exported PDF or preview if unpaid */}
-              {isWatermarked && userPlan === "FREE" && (
-                <div className="mt-16 pt-4 border-t border-slate-200 text-xs text-slate-400 text-center select-none pointer-events-none">
-                  Generated securely by DocuSeal.ai
-                </div>
-              )}
+        <div
+          id="document-content-wrapper"
+          className="relative max-w-4xl mx-auto"
+        >
+          {/* We only render the title inside the PDF wrapper if we are NOT editing, 
+              otherwise it looks a bit redundant, but for PDF export we definitely want it there. 
+              Let's always render it for the PDF capture. */}
+          {!isEditing && (
+            <div className="px-10 pt-10 pb-4">
+              <h1 className="text-3xl font-bold border-b pb-4 text-slate-900">{title}</h1>
             </div>
+          )}
+
+          <div className={`prose prose-sm md:prose-base max-w-none text-slate-800 prose-headings:text-slate-900 prose-a:text-blue-600 prose-strong:text-slate-900 ${!isEditing ? 'px-2' : ''}`}>
+            <TipTapEditor
+              content={content}
+              onChange={(newContent) => setContent(newContent)}
+              editable={isEditing}
+            />
           </div>
-        )}
+
+          {/* Watermark for free plan, only visible in exported PDF or preview if unpaid */}
+          {!isEditing && isWatermarked && userPlan === "FREE" && (
+            <div className="mx-10 mt-8 mb-8 pt-4 border-t border-slate-200 text-xs text-slate-400 text-center select-none pointer-events-none">
+              Generated securely by DocuSeal.ai
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

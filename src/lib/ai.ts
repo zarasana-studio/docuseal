@@ -8,7 +8,7 @@ const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 // ─── Document type → prompt builder ─────────────────────────────
 
 function buildPrompt(documentType: string, answers: Record<string, string>): string {
-  const base = `You are a professional legal document drafter. Generate a complete, professional legal document based on the details provided. Use clear headings, numbered sections, and professional legal language. Do not add any commentary or explanation — output only the document text itself.`;
+  const base = `You are a professional legal document drafter. Generate a complete, professional legal document based on the details provided. Use clear semantic HTML tags (such as <h1>, <h2>, <p>, <ul>, <li>, <strong>) for formatting. Do not use Markdown. Do not add any commentary, markdown code block wrappers (like \`\`\`html), or explanations — output only the raw HTML content itself. Use [____] for any blank placeholders that the user needs to fill in manually.`;
 
   const prompts: Record<string, string> = {
     PRIVACY_POLICY: `${base}
@@ -109,7 +109,7 @@ Generate a clear Refund and Return Policy:
 Include sections for: Eligibility for Refunds, How to Request a Refund, Processing Timeline, Non-Refundable Items, Exchanges, and Contact Information.`,
   };
 
-  return prompts[documentType] ?? `${base}\n\nGenerate a professional ${documentType.replace(/_/g, " ").toLowerCase()} document with the following details:\n${JSON.stringify(answers, null, 2)}`;
+  return prompts[documentType] ?? `${base}\n\nGenerate a professional ${documentType.replace(/_/g, " ").toLowerCase()} document using HTML formatting with the following details:\n${JSON.stringify(answers, null, 2)}`;
 }
 
 // ─── Main export ─────────────────────────────────────────────────
