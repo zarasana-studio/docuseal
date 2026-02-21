@@ -14,6 +14,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { PricingSection } from "@/components/PricingSection";
+import { auth } from "@/auth";
 
 export const metadata: Metadata = {
   title: "Free AI Legal Document Generator — Privacy Policy, NDA, Contracts",
@@ -197,7 +198,9 @@ const FAQS = [
 ];
 
 
-export default function HomePage() {
+export default async function HomePage() {
+  const session = await auth();
+
   return (
     <div className="min-h-screen bg-background">
       {/* ─── Nav ──────────────────────────────────────────────────────── */}
@@ -236,18 +239,29 @@ export default function HomePage() {
             </Link>
           </nav>
           <div className="flex items-center gap-3">
-            <Link
-              href="/login"
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Sign in
-            </Link>
-            <Link
-              href="/signup"
-              className="inline-flex items-center gap-1.5 bg-primary text-primary-foreground text-sm font-medium px-4 py-2 rounded-lg hover:opacity-90 transition-opacity"
-            >
-              Get Started Free
-            </Link>
+            {session?.user ? (
+              <Link
+                href="/dashboard"
+                className="inline-flex items-center gap-1.5 bg-primary text-primary-foreground text-sm font-medium px-4 py-2 rounded-lg hover:opacity-90 transition-opacity"
+              >
+                Dashboard <ArrowRight className="w-4 h-4" />
+              </Link>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Sign in
+                </Link>
+                <Link
+                  href="/signup"
+                  className="inline-flex items-center gap-1.5 bg-primary text-primary-foreground text-sm font-medium px-4 py-2 rounded-lg hover:opacity-90 transition-opacity"
+                >
+                  Get Started Free
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </header>
