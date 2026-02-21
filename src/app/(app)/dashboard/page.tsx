@@ -4,7 +4,6 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import {
   DOCUMENT_TYPE_LABELS,
-  DOCUMENT_TYPE_SLUGS,
   formatDate,
 } from "@/lib/utils";
 import { PLAN_LIMITS, PLAN_PRICES } from "@/lib/plans";
